@@ -191,26 +191,50 @@ void applicationLoop() {
 			(float)screenWidth / screenWidth, 0.01f, 100.0f);
 		glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -8.0f));
 
-		sphere.setProjectionMatrix(projection);
-		sphere.setViewMatrix(view);
-		sphere.setPosition(glm::vec3(0.0f, 0.0f, 1.0f));
-		sphere.setScale(glm::vec3(1.0, 1.0, 1.0));
-		sphere.enableWireMode();
-		sphere.render();
-
+		glm::mat4 matrix0 = glm::mat4(1.0f);
+		matrix0 = glm::translate(matrix0, glm::vec3(0.0f, 0.0f, -1.0f));
+		glm::mat4 matrixs1 = glm::translate(matrix0, glm::vec3(0.0f, -0.5f, 0.0f));
+		matrix0 = glm::scale(matrix0, glm::vec3(0.6f, 1.0f, 0.6f));
 		cylinder.setProjectionMatrix(projection);
 		cylinder.setViewMatrix(view);
-		cylinder.setPosition(glm::vec3(0.0f, 0.0f, 1.0f));
-		cylinder.setScale(glm::vec3(1.0, 1.0, 1.0));
 		cylinder.enableWireMode();
-		cylinder.render();
+		cylinder.render(matrix0);
+		
+		glm::mat4 matrixs2 = glm::translate(matrixs1, glm::vec3(-0.225f, 0.0f, 0.0f));
+		glm::mat4 matrixs3 = glm::translate(matrixs1, glm::vec3(0.225f, 0.0f, 0.0f));
+		matrixs1 = glm::scale(matrixs1, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs1);
 
-		box.setProjectionMatrix(projection);
-		box.setViewMatrix(view);
-		box.setPosition(glm::vec3(0.0f, 0.0f, 1.0f));
-		box.setScale(glm::vec3(1.0, 1.0, 1.0));
-		box.enableWireMode();
-		box.render();
+		glm::mat4 matrix1 = glm::rotate(matrixs2, -0.2f, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix1 = glm::translate(matrix1, glm::vec3(0.0, -0.4, 0.0));
+
+		glm::mat4 matrixs4 = glm::translate(matrix1, glm::vec3(0.0f, -0.4f, 0.0f));
+		matrixs4 = glm::scale(matrixs4, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs4);
+
+		matrix1 = glm::scale(matrix1, glm::vec3(0.15f, 0.8f, 0.15f));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.enableWireMode();
+		cylinder.render(matrix1);
+		
+		matrixs2 = glm::scale(matrixs2, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs2);
+
+		matrixs3 = glm::scale(matrixs3, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs3);
 
 		glfwSwapBuffers(window);
 	}
