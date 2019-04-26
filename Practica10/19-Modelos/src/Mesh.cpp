@@ -52,7 +52,7 @@ void Mesh::render(glm::mat4 parentTrans) {
 	}
 
 	// Se Dibuja la maya
-	AbstractModel::render();
+	AbstractModel::render(parentTrans);
 
 	// Siempre es buena practica colocar los datos defaults antes de ser configurados.
 	for (GLuint i = 0; i < this->textures.size(); i++) {

@@ -35,6 +35,7 @@ std::shared_ptr<FirstPersonCamera> camera(new FirstPersonCamera());
 Sphere sphere(20, 20);
 Cylinder cylinder(20, 20, 0.5, 0.5);
 Box box;
+Box boxWater;
 
 Shader shaderColor;
 Shader shaderTexture;
@@ -43,10 +44,15 @@ Shader shaderMateriales;
 Shader shaderDirectionLight;
 Shader shaderPointLight;
 Shader shaderSpotLight;
+Shader shaderLighting;
 
-Model model;
+Model modelRock;
+Model modelRail;
+Model modelAirCraft;
+Model arturito;
+Model modelTrain;
 
-GLuint textureID1, textureID2, textureID3, textureCubeTexture;
+GLuint textureID1, textureID2, textureID3, textureCespedID, textureWaterID, textureCubeTexture;
 GLuint cubeTextureID;
 
 GLenum types[6] = {
@@ -147,14 +153,20 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	shaderDirectionLight.initialize("../../Shaders/typeLight.vs", "../../Shaders/directionalLight.fs");
 	shaderPointLight.initialize("../../Shaders/typeLight.vs", "../../Shaders/pointLight.fs");
 	shaderSpotLight.initialize("../../Shaders/typeLight.vs", "../../Shaders/spotLight.fs");
+	shaderLighting.initialize("../../Shaders/typeLight.vs", "../../Shaders/multipleLights.fs");
 
 	sphere.init();
 	cylinder.init();
 	box.init();
-	model.loadModel("../../models/rock/rock.obj");
+	box.scaleUVS(glm::vec2(100.0, 100.0));
+	boxWater.init();
+	boxWater.scaleUVS(glm::vec2(1.0, 1.0));
+	modelRock.loadModel("../../models/rock/rock.obj");
+	modelRail.loadModel("../../models/railroad/railroad_track.obj");
+	modelAirCraft.loadModel("../../models/Aircraft_obj/E 45 Aircraft_obj.obj");
 
 	camera->setPosition(glm::vec3(0.0f, 0.0f, 0.4f));
-
+	
 	// Textura Ladrillos
 	int imageWidth, imageHeight;
 	Texture texture("../../Textures/texturaLadrillos.jpg");
@@ -216,6 +228,43 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 		std::cout << "Failed to load texture" << std::endl;
 	texture.freeImage(bitmap);
 
+	texture = Texture("../../Textures/cesped.jpg");
+	bitmap = texture.loadImage(false);
+	data = texture.convertToData(bitmap, imageWidth, imageHeight);
+	glGenTextures(1, &textureCespedID);
+	glBindTexture(GL_TEXTURE_2D, textureCespedID);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	if (data) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+		std::cout << "Failed to load texture" << std::endl;
+	texture.freeImage(bitmap);
+
+	texture = Texture("../../Textures/water2.jpg");
+	bitmap = texture.loadImage(false);
+	data = texture.convertToData(bitmap, imageWidth, imageHeight);
+	glGenTextures(1, &textureWaterID);
+	glBindTexture(GL_TEXTURE_2D, textureWaterID);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	if (data) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+		std::cout << "Failed to load texture" << std::endl;
+	texture.freeImage(bitmap);
 
 	glGenTextures(1, &cubeTextureID);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, cubeTextureID);
@@ -323,9 +372,13 @@ void applicationLoop() {
 	bool psi = true;
 	double lastTime = TimeManager::Instance().GetTime();
 
-	glm::vec3 objPosition = glm::vec3(0.0f, 0.0f, -3.0f);
 	float angle = 0.0;
-	float ratio = 5.0;
+	float ratio = 20.0;
+
+	float aircraftZ = 0.0;
+	bool direcionAirCraft = true;
+	float rotationAirCraft = 0.0;
+	bool finishRotation = true;
 
 	while (psi) {
 		psi = processInput(true);
@@ -339,34 +392,34 @@ void applicationLoop() {
 		// matrix de vista
 		glm::mat4 view = camera->getViewMatrix();
 
-		glm::mat4 cubeModelMatrix = glm::translate(glm::mat4(1.0f), objPosition);
-
 		shaderTexture.turnOn();
+		// Importante si se quiere renderizar modelos y texturas
+		glActiveTexture(GL_TEXTURE0);
 		cylinder.setShader(&shaderTexture);
 		cylinder.setProjectionMatrix(projection);
 		cylinder.setViewMatrix(view);
+		cylinder.setPosition(glm::vec3(-3.0f, 2.0f, -3.0f));
 		glBindTexture(GL_TEXTURE_2D, textureID2);
-		cylinder.render(0, cylinder.getSlices() * cylinder.getStacks() * 2 * 3, cubeModelMatrix);
+		cylinder.render(0, cylinder.getSlices() * cylinder.getStacks() * 2 * 3);
 		glBindTexture(GL_TEXTURE_2D, textureID1);
-		cylinder.render(cylinder.getSlices() * cylinder.getStacks() * 2 * 3, cylinder.getSlices() * 3, cubeModelMatrix);
+		cylinder.render(cylinder.getSlices() * cylinder.getStacks() * 2 * 3, cylinder.getSlices() * 3);
 		glBindTexture(GL_TEXTURE_2D, textureID3);
-		cylinder.render(cylinder.getSlices() * cylinder.getStacks() * 2 * 3 + cylinder.getSlices() * 3, cylinder.getSlices() * 3, cubeModelMatrix);
+		cylinder.render(cylinder.getSlices() * cylinder.getStacks() * 2 * 3 + cylinder.getSlices() * 3, cylinder.getSlices() * 3);
 		glBindTexture(GL_TEXTURE_2D, 0);
 		shaderTexture.turnOff();
-
+		
 		cylinder.setShader(&shaderMateriales);
 		cylinder.setProjectionMatrix(projection);
 		cylinder.setViewMatrix(view);
 		cylinder.setPosition(glm::vec3(0.0, 0.0, 0.0));
 		cylinder.setScale(glm::vec3(1.0, 1.0, 1.0));
+		
 		// Iluminación
-		glm::mat4 lightModelmatrix = glm::rotate(cubeModelMatrix, angle, glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 lightModelmatrix = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(1.0f, 0.0f, 0.0f));
 		lightModelmatrix = glm::translate(lightModelmatrix, glm::vec3(0.0f, 0.0f, -ratio));
+
 		shaderMateriales.turnOn();
 		glUniform3fv(shaderMateriales.getUniformLocation("light.position"), 1, glm::value_ptr(glm::vec3(lightModelmatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f))));
-		glUniform3fv(shaderMateriales.getUniformLocation("light.direction"), 1, glm::value_ptr(glm::vec3(-0.3f, -1.0f, -0.2f)));
-		//glUniform3fv(shaderMateriales.getUniformLocation("light.position"), 1, glm::value_ptr(camera->getPosition()));
-		//glUniform3fv(shaderMateriales.getUniformLocation("light.direction"),1, glm::value_ptr(camera->getFront()));
 		glUniform3fv(shaderMateriales.getUniformLocation("viewPos"), 1, glm::value_ptr(camera->getPosition()));
 		glUniform3f(shaderMateriales.getUniformLocation("light.ambient"), 0.2, 0.2, 0.2);
 		glUniform3f(shaderMateriales.getUniformLocation("light.diffuse"), 0.2, 0.3, 0.6);
@@ -374,34 +427,92 @@ void applicationLoop() {
 		glUniform3f(shaderMateriales.getUniformLocation("material.ambient"), 1.0, 0.2, 0.6);
 		glUniform3f(shaderMateriales.getUniformLocation("material.diffuse"), 0.4, 0.5, 0.8);
 		glUniform3f(shaderMateriales.getUniformLocation("material.specular"), 0.5, 0.3, 0.2);
-		glUniform1f(shaderMateriales.getUniformLocation("light.cutOff"), glm::cos(glm::radians(12.5f)));
-		glUniform1f(shaderMateriales.getUniformLocation("light.outerCutOff"), glm::cos(glm::radians(15.0f)));
-		glUniform1f(shaderMateriales.getUniformLocation("light.constant"), 1.0f);
-		glUniform1f(shaderMateriales.getUniformLocation("light.linear"), 0.14f);
-		glUniform1f(shaderMateriales.getUniformLocation("light.quadratics"), 0.07f);
 		glUniform1f(shaderMateriales.getUniformLocation("material.shininess"), 32.0);
 		cylinder.render();
 		shaderMateriales.turnOff();
 
-		shaderSpotLight.turnOn();
-		glUniform3fv(shaderSpotLight.getUniformLocation("light.position"), 1, glm::value_ptr(camera->getPosition()));
-		glUniform3fv(shaderSpotLight.getUniformLocation("light.direction"),1, glm::value_ptr(camera->getFront()));
-		glUniform3fv(shaderSpotLight.getUniformLocation("viewPos"), 1, glm::value_ptr(camera->getPosition()));
-		glUniform3f(shaderSpotLight.getUniformLocation("light.ambient"), 0.2, 0.2, 0.2);
-		glUniform3f(shaderSpotLight.getUniformLocation("light.diffuse"), 0.2, 0.3, 0.6);
-		glUniform3f(shaderSpotLight.getUniformLocation("light.specular"), 0.5, 0.3, 0.2);
-		glUniform1f(shaderSpotLight.getUniformLocation("light.cutOff"), glm::cos(glm::radians(12.5f)));
-		glUniform1f(shaderSpotLight.getUniformLocation("light.outerCutOff"), glm::cos(glm::radians(15.0f)));
-		glUniform1f(shaderSpotLight.getUniformLocation("light.constant"), 1.0f);
-		glUniform1f(shaderSpotLight.getUniformLocation("light.linear"), 0.14f);
-		glUniform1f(shaderSpotLight.getUniformLocation("light.quadratics"), 0.07f);
-		model.setShader(&shaderSpotLight);
-		model.setProjectionMatrix(projection);
-		model.setViewMatrix(view);
-		model.setPosition(glm::vec3(5.0, 3.0, -20.0));
-		model.setScale(glm::vec3(1.0, 1.0, 1.0));
-		model.render();
-		shaderSpotLight.turnOff();
+		shaderLighting.turnOn();
+		glUniform3fv(shaderLighting.getUniformLocation("viewPos"), 1, glm::value_ptr(camera->getPosition()));
+		//Directional light
+		glUniform3f(shaderLighting.getUniformLocation("directionalLight.light.ambient"), 0.025, 0.025, 0.025);
+		glUniform3f(shaderLighting.getUniformLocation("directionalLight.light.diffuse"), 0.1, 0.1, 0.1);
+		glUniform3f(shaderLighting.getUniformLocation("directionalLight.light.specular"), 0.15, 0.15, 0.15);
+		glUniform3fv(shaderLighting.getUniformLocation("directionalLight.direction"), 1, glm::value_ptr(glm::vec3(0, -1.0, 0.0)));
+		//Numero de luces spot y point
+		int locCount = shaderLighting.getUniformLocation("pointLightCount");
+		glUniform1i(shaderLighting.getUniformLocation("pointLightCount"), 1);
+		glUniform1i(shaderLighting.getUniformLocation("spotLightCount"), 1);
+		// Point light
+		glUniform3fv(shaderLighting.getUniformLocation("pointLights[0].position"), 1, glm::value_ptr(glm::vec3(lightModelmatrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f))));
+		glUniform1f(shaderLighting.getUniformLocation("pointLights[0].constant"), 1.0f);
+		glUniform1f(shaderLighting.getUniformLocation("pointLights[0].linear"), 0.14f);
+		glUniform1f(shaderLighting.getUniformLocation("pointLights[0].quadratics"), 0.07f);
+		glUniform3f(shaderLighting.getUniformLocation("pointLights[0].light.ambient"), 0.025, 0.025, 0.025);
+		glUniform3f(shaderLighting.getUniformLocation("pointLights[0].light.diffuse"), 0.2, 0.3, 0.15);
+		glUniform3f(shaderLighting.getUniformLocation("pointLights[0].light.specular"), 0.5, 0.1, 0.2);
+		// Spot light
+		glUniform3fv(shaderLighting.getUniformLocation("spotLights[0].position"), 1, glm::value_ptr(camera->getPosition()));
+		glUniform3fv(shaderLighting.getUniformLocation("spotLights[0].direction"), 1, glm::value_ptr(camera->getFront()));
+		glUniform1f(shaderLighting.getUniformLocation("spotLights[0].cutOff"), glm::cos(glm::radians(12.5f)));
+		glUniform1f(shaderLighting.getUniformLocation("spotLights[0].outerCutOff"), glm::cos(glm::radians(15.0f)));
+		glUniform1f(shaderLighting.getUniformLocation("spotLights[0].constant"), 1.0f);
+		glUniform1f(shaderLighting.getUniformLocation("spotLights[0].linear"), 0.14f);
+		glUniform1f(shaderLighting.getUniformLocation("spotLights[0].quadratics"), 0.07f);
+		glUniform3f(shaderLighting.getUniformLocation("spotLights[0].light.ambient"), 0.025, 0.025, 0.025);
+		glUniform3f(shaderLighting.getUniformLocation("spotLights[0].light.diffuse"), 0.7, 0.2, 0.6);
+		glUniform3f(shaderLighting.getUniformLocation("spotLights[0].light.specular"), 0.1, 0.7, 0.8);
+		shaderLighting.turnOff();
+
+		modelRock.setShader(&shaderLighting);
+		modelRock.setProjectionMatrix(projection);
+		modelRock.setViewMatrix(view);
+		modelRock.setPosition(glm::vec3(5.0, 3.0, -20.0));
+		modelRock.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelRock.render();
+
+		modelRail.setShader(&shaderLighting);
+		modelRail.setProjectionMatrix(projection);
+		modelRail.setViewMatrix(view);
+		modelRail.setPosition(glm::vec3(-10.0, 0.0, 25.0));
+		modelRail.setScale(glm::vec3(1.0, 1.0, 1.0));
+		modelRail.render();
+
+		modelAirCraft.setShader(&shaderLighting);
+		modelAirCraft.setProjectionMatrix(projection);
+		modelAirCraft.setViewMatrix(view);
+		modelAirCraft.setScale(glm::vec3(1.0, 1.0, 1.0));
+		glm::mat4 matrixAirCraft = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, aircraftZ));
+		matrixAirCraft = glm::translate(matrixAirCraft, glm::vec3(10.0, 2.0, 15.0));
+		matrixAirCraft = glm::rotate(matrixAirCraft, rotationAirCraft, glm::vec3(0, 1, 0));
+		modelAirCraft.render(matrixAirCraft);
+
+		/*arturito.setShader(&shaderLighting);
+		arturito.setProjectionMatrix(projection);
+		arturito.setViewMatrix(view);
+		arturito.setScale(glm::vec3(1.0, 1.0, 1.0));
+		glm::mat4 matrixArturito = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, aircraftZ));
+		matrixArturito = glm::translate(matrixArturito, glm::vec3(-10.0, 2.0, 15.0));
+		matrixArturito = glm::rotate(matrixArturito, rotationAirCraft, glm::vec3(0, 1, 0));
+		arturito.render(matrixArturito);*/
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureCespedID);
+		box.setShader(&shaderLighting);
+		box.setProjectionMatrix(projection);
+		box.setViewMatrix(view);
+		box.setPosition(glm::vec3(0.0, 0.0, 0.0));
+		box.setScale(glm::vec3(100.0, 0.001, 100.0));
+		box.render();
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textureWaterID);
+		boxWater.setShader(&shaderLighting);
+		boxWater.setProjectionMatrix(projection);
+		boxWater.setViewMatrix(view);
+		boxWater.setPosition(glm::vec3(3.0, 2.0, -5.0));
+		boxWater.setScale(glm::vec3(10.0, 0.001, 10.0));
+		boxWater.offsetUVS(glm::vec2(0.0001, 0.0001));
+		boxWater.render();
 
 		if (angle > 2 * M_PI)
 			angle = 0.0;
@@ -435,6 +546,37 @@ void applicationLoop() {
 		glCullFace(oldCullFaceMode);
 		glDepthFunc(oldDepthFuncMode);
 		shaderCubeTexture.turnOff();
+
+		if (finishRotation) {
+			if (direcionAirCraft)
+				aircraftZ -= 0.01;
+			else
+				aircraftZ += 0.01;
+			if (direcionAirCraft && aircraftZ < -6.0) {
+				direcionAirCraft = false;
+				finishRotation = false;
+				aircraftZ = -6.0;
+			}if (!direcionAirCraft && aircraftZ > 6.0) {
+				direcionAirCraft = true;
+				finishRotation = false;
+				aircraftZ = 6.0;
+			}
+		}
+		else {
+			rotationAirCraft += 0.01;
+			if (!direcionAirCraft) {
+				if (rotationAirCraft > glm::radians(180.0f)) {
+					finishRotation = true;
+					rotationAirCraft = glm::radians(180.0f);
+				}
+			}
+			else {
+				if (rotationAirCraft > glm::radians(360.0f)) {
+					finishRotation = true;
+					rotationAirCraft = glm::radians(0.0f);
+				}
+			}
+		}
 
 		glfwSwapBuffers(window);
 	}
