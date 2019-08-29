@@ -34,6 +34,10 @@
     <ClInclude Include="src\Headers\Sphere.h" />
     <ClInclude Include="src\Headers\TimeManager.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Shaders\colorShader.fs" />
+    <None Include="..\Shaders\colorShader.vs" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{59cb9b00-d532-4db6-b06a-4d0ab90a5f08}</ProjectGuid>
