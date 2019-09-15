@@ -1,6 +1,8 @@
 #include "Headers/Cylinder.h"
 
 Cylinder::Cylinder(int slices, int stacks, float topRadius, float bottomRadius, float height) {
+	this->slices = slices;
+	this->stacks = stacks;
 	float stackHeight = height / stacks;
 	float radiusStep = (topRadius - bottomRadius) / stacks;
 	int count = 0;
