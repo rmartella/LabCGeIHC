@@ -37,18 +37,20 @@ GLFWwindow * window;
 Shader shader;
 //Descomentar El shader de texturizado
 Shader shaderTexture;
+// Descomentar El shader para iluminacion
+//Shader shaderColorLighting;
 
 std::shared_ptr<FirstPersonCamera> camera(new FirstPersonCamera());
 
 Sphere sphere1(20, 20);
 Sphere sphere2(20, 20);
 Sphere sphere3(20, 20);
+Sphere sphereLamp(20, 20);
 Cylinder cylinder1(20, 20, 0.5, 0.5);
 Cylinder cylinder2(20, 20, 0.5, 0.5);
 Box box1;
 Box box2;
 
-// Descomentar
 GLuint textureID1, textureID2, textureID3;
 
 bool exitApp = false;
@@ -126,8 +128,10 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	glEnable(GL_CULL_FACE);
 
 	shader.initialize("../Shaders/colorShader.vs", "../Shaders/colorShader.fs");
-	//Descomentar
-	shaderTexture.initialize("../Shaders/texturizado.vs", "../Shaders/texturizado.fs");
+	shaderTexture.initialize("../Shaders/texturizado_res.vs", "../Shaders/texturizado_res.fs");
+	// Descomentar
+	/*shaderColorLighting.initialize("../Shaders/iluminacion_color_res.vs",
+			"../Shaders/iluminacion_color_res.fs");*/
 
 	// Inicializar los buffers VAO, VBO, EBO
 	sphere1.init();
@@ -142,6 +146,14 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	sphere2.setShader(&shader);
 	//Setter para poner el color de la geometria
 	sphere2.setColor(glm::vec4(1.0, 1.0, 1.0, 1.0));
+
+	// Descomentar
+	/*// Inicializar los buffers VAO, VBO, EBO
+	sphereLamp.init();
+	// Método setter que colocar el apuntador al shader
+	sphereLamp.setShader(&shader);
+	//Setter para poner el color de la geometria
+	sphereLamp.setColor(glm::vec4(1.0, 1.0, 1.0, 1.0));*/
 
 	cylinder1.init();
 	cylinder1.setShader(&shader);
@@ -203,8 +215,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	// Carga el mapa de bits (FIBITMAP es el tipo de dato de la libreria)
 	bitmap = texture2.loadImage();
 	// Convertimos el mapa de bits en un arreglo unidimensional de tipo unsigned char
-	data = texture2.convertToData(bitmap, imageWidth,
-			imageHeight);
+	data = texture2.convertToData(bitmap, imageWidth, imageHeight);
 	// Creando la textura con id 1
 	glGenTextures(1, &textureID2);
 	// Enlazar esa textura a una tipo de textura de 2D.
@@ -358,7 +369,6 @@ bool processInput(bool continueApplication) {
 	if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS && sentido)
 		rot4 += 0.001;
 
-
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
 		rot0 = 0.0001;
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
@@ -379,6 +389,8 @@ void applicationLoop() {
 
 	glm::mat4 model = glm::mat4(1.0f);
 	float offX = 0.0;
+	float angle = 0.0;
+	float ratio = 5.0;
 	while (psi) {
 		psi = processInput(true);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -389,10 +401,27 @@ void applicationLoop() {
 
 		shader.setMatrix4("projection", 1, false, glm::value_ptr(projection));
 		shader.setMatrix4("view", 1, false, glm::value_ptr(view));
-		//Descomentar
 		// Settea la matriz de vista y projection al nuevo shader
-		shaderTexture.setMatrix4("projection", 1, false, glm::value_ptr(projection));
+		shaderTexture.setMatrix4("projection", 1, false,
+				glm::value_ptr(projection));
 		shaderTexture.setMatrix4("view", 1, false, glm::value_ptr(view));
+
+		// Descomentar
+		/*shaderColorLighting.setMatrix4("projection", 1, false, glm::value_ptr(projection));
+		shaderColorLighting.setMatrix4("view", 1, false, glm::value_ptr(view));
+		shaderColorLighting.setVectorFloat3("viewPos", glm::value_ptr(camera->getPosition()));
+		shaderColorLighting.setVectorFloat3("light.ambient", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
+		shaderColorLighting.setVectorFloat3("light.diffuse", glm::value_ptr(glm::vec3(0.4, 0.4, 0.4)));
+		shaderColorLighting.setVectorFloat3("light.specular", glm::value_ptr(glm::vec3(0.9, 0.9, 0.9)));
+
+		glm::mat4 lightModelmatrix = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(1.0f, 0.0f, 0.0f));
+		lightModelmatrix = glm::translate(lightModelmatrix, glm::vec3(0.0f, 0.0f, -ratio));
+		shaderColorLighting.setVectorFloat3("light.position",
+				glm::value_ptr(
+						glm::vec4(
+								lightModelmatrix
+										* glm::vec4(0.0, 0.0, 0.0, 1.0))));
+		sphereLamp.render(lightModelmatrix);*/
 
 		model = glm::translate(model, glm::vec3(0, 0, dz));
 		model = glm::rotate(model, rot0, glm::vec3(0, 1, 0));
@@ -400,12 +429,10 @@ void applicationLoop() {
 		//Descomentar
 		// Usamos la textura ID 1
 		glBindTexture(GL_TEXTURE_2D, textureID1);
-		shaderTexture.setFloat("offsetX", 0);
 		box1.render(glm::scale(model, glm::vec3(1.0, 1.0, 0.1)));
 		//Descomentar
 		// No utilizar ninguna textura
 		glBindTexture(GL_TEXTURE_2D, 0);
-
 
 		// Articulacion 1
 		glm::mat4 j1 = glm::translate(model, glm::vec3(0.5f, 0.0f, 0.0f));
@@ -417,7 +444,7 @@ void applicationLoop() {
 		// Hueso 1
 		glm::mat4 l1 = glm::translate(j1, glm::vec3(0.25f, 0.0, 0.0));
 		l1 = glm::rotate(l1, glm::radians(90.0f), glm::vec3(0, 0, 1.0));
-		cylinder1.enableWireMode();
+		//cylinder1.enableWireMode();
 		cylinder1.render(glm::scale(l1, glm::vec3(0.1, 0.5, 0.1)));
 
 		// Articulacion 2
@@ -450,17 +477,17 @@ void applicationLoop() {
 		shaderTexture.setFloat("offsetX", offX);
 		box2.render(modelAgua);
 		glBindTexture(GL_TEXTURE_2D, 0);
+		shaderTexture.setFloat("offsetX", 0);
 
 		glm::mat4 modelSphere = glm::mat4(1.0);
 		modelSphere = glm::translate(modelSphere, glm::vec3(3.0, 0.0, 0.0));
 		glBindTexture(GL_TEXTURE_2D, textureID3);
-		shaderTexture.setFloat("offsetX", 0);
 		sphere3.render(modelSphere);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		glm::mat4 modelCylinder = glm::mat4(1.0);
-		modelCylinder = glm::translate(modelCylinder, glm::vec3(-3.0, 0.0, 0.0));
-		shaderTexture.setFloat("offsetX", 0);
+		modelCylinder = glm::translate(modelCylinder,
+				glm::vec3(-3.0, 0.0, 0.0));
 		// Envolvente desde el indice 0, el tamanio es 20 * 20 * 6
 		// Se usa la textura 1 ( Bon sponja)
 		glBindTexture(GL_TEXTURE_2D, textureID1);
@@ -470,16 +497,20 @@ void applicationLoop() {
 		// Se usa la textura 2 ( Agua )
 		glBindTexture(GL_TEXTURE_2D, textureID2);
 		cylinder2.render(cylinder2.getSlices() * cylinder2.getStacks() * 6,
-				cylinder2.getSlices() * 3,
-				modelCylinder);
+				cylinder2.getSlices() * 3, modelCylinder);
 		// Tapa inferior desde el indice : 20 * 20 * 6 + 20 * 3, el tamanio de indices es 20 * 3
 		// Se usa la textura 3 ( Goku )
 		glBindTexture(GL_TEXTURE_2D, textureID3);
-		cylinder2.render(cylinder2.getSlices() * cylinder2.getStacks() * 6 + cylinder2.getSlices() * 3,
-				cylinder2.getSlices() * 3,
+		cylinder2.render(
+				cylinder2.getSlices() * cylinder2.getStacks() * 6
+						+ cylinder2.getSlices() * 3, cylinder2.getSlices() * 3,
 				modelCylinder);
-
 		glBindTexture(GL_TEXTURE_2D, 0);
+
+		if (angle > 2 * M_PI)
+			angle = 0.0;
+		else
+			angle += 0.0001;
 
 		shader.turnOff();
 
