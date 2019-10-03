@@ -39,6 +39,12 @@ public:
 		glUniform1f(id, value);
 	}
 
+	void setInt(std::string strVariable, int value){
+		this->turnOn();
+		GLint id = this->getUniformLocation(strVariable);
+		glUniform1i(id, value);
+	}
+
 	void setVectorFloat2(std::string strVariable, const GLfloat *value){
 		this->turnOn();
 		GLint id = this->getUniformLocation(strVariable);

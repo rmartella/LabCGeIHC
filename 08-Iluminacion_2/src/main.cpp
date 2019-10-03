@@ -37,10 +37,12 @@ int screenHeight;
 GLFWwindow * window;
 
 Shader shader;
-//Descomentar El shader de texturizado
+//Shader de texturizado
 Shader shaderTexture;
-// Descomentar El shader para iluminacion
+//Shader con iluminacion solo color
 Shader shaderColorLighting;
+//Shader con iluminacion y textura
+Shader shaderTextureLighting;
 
 std::shared_ptr<FirstPersonCamera> camera(new FirstPersonCamera());
 
@@ -133,8 +135,10 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	shader.initialize("../Shaders/colorShader.vs", "../Shaders/colorShader.fs");
 	shaderTexture.initialize("../Shaders/texturizado_res.vs", "../Shaders/texturizado_res.fs");
 	// Descomentar
-	shaderColorLighting.initialize("../Shaders/iluminacion_color.vs",
-			"../Shaders/iluminacion_color.fs");
+	shaderColorLighting.initialize("../Shaders/iluminacion_color_res.vs",
+			"../Shaders/iluminacion_color_res.fs");
+	shaderTextureLighting.initialize("../Shaders/iluminacion_texture_res.vs",
+			"../Shaders/iluminacion_texture_res.fs");
 
 	// Inicializar los buffers VAO, VBO, EBO
 	sphere1.init();
@@ -167,7 +171,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	box1.init();
 	// Settea el shader a utilizar
-	box1.setShader(&shaderIluminacionTexture);
+	box1.setShader(&shaderTextureLighting);
 	box1.setColor(glm::vec4(1.0, 1.0, 0.0, 1.0));
 
 	box2.init();
@@ -444,6 +448,10 @@ void applicationLoop() {
 				glm::value_ptr(projection));
 		shaderTexture.setMatrix4("view", 1, false, glm::value_ptr(view));
 
+		shaderTextureLighting.setMatrix4("projection", 1, false,
+				glm::value_ptr(projection));
+		shaderTextureLighting.setMatrix4("view", 1, false, glm::value_ptr(view));
+
 		// Descomentar
 		shaderColorLighting.setMatrix4("projection", 1, false, glm::value_ptr(projection));
 		shaderColorLighting.setMatrix4("view", 1, false, glm::value_ptr(view));
@@ -452,9 +460,21 @@ void applicationLoop() {
 		shaderColorLighting.setVectorFloat3("light.diffuse", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
 		shaderColorLighting.setVectorFloat3("light.specular", glm::value_ptr(glm::vec3(0.9, 0.0, 0.0)));
 
+		shaderTextureLighting.setMatrix4("projection", 1, false, glm::value_ptr(projection));
+		shaderTextureLighting.setMatrix4("view", 1, false, glm::value_ptr(view));
+		shaderTextureLighting.setVectorFloat3("viewPos", glm::value_ptr(camera->getPosition()));
+		shaderTextureLighting.setVectorFloat3("light.ambient", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
+		shaderTextureLighting.setVectorFloat3("light.diffuse", glm::value_ptr(glm::vec3(0.3, 0.3, 0.3)));
+		shaderTextureLighting.setVectorFloat3("light.specular", glm::value_ptr(glm::vec3(0.9, 0.0, 0.0)));
+
 		glm::mat4 lightModelmatrix = glm::rotate(glm::mat4(1.0f), angle, glm::vec3(1.0f, 0.0f, 0.0f));
 		lightModelmatrix = glm::translate(lightModelmatrix, glm::vec3(0.0f, 0.0f, -ratio));
 		shaderColorLighting.setVectorFloat3("light.position",
+				glm::value_ptr(
+						glm::vec4(
+								lightModelmatrix
+										* glm::vec4(0.0, 0.0, 0.0, 1.0))));
+		shaderTextureLighting.setVectorFloat3("light.position",
 				glm::value_ptr(
 						glm::vec4(
 								lightModelmatrix
