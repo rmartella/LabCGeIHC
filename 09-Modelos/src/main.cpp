@@ -169,7 +169,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	shaderTextureLighting.initialize("../Shaders/iluminacion_texture_res.vs",
 			"../Shaders/iluminacion_texture_res.fs");
 	shaderMaterialLighting.initialize("../Shaders/iluminacion_material.vs",
-			"../Shaders/iluminacion_material.fs");
+			"../Shaders/iluminacion_material_res.fs");
 	shaderSkybox.initialize("../Shaders/cubeTexture.vs",
 			"../Shaders/cubeTexture.fs");
 	shaderMulLighting.initialize("../Shaders/iluminacion_texture_res.vs",
