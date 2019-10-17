@@ -72,6 +72,7 @@ Box box1;
 Box box2;
 Box box3;
 Box boxCesped;
+Box boxWall;
 // Models complex instances
 Model modelRock;
 Model modelRailRoad;
@@ -239,6 +240,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 
 	boxCesped.init();
 	boxCesped.setShader(&shaderMulLighting);
+
+	boxWall.init();
+	boxWall.setShader(&shaderMulLighting);
 
 	modelRock.loadModel("../models/rock/rock.obj");
 	modelRock.setShader(&shaderMulLighting);
@@ -774,9 +778,11 @@ void applicationLoop() {
 		cubeTextureModel = glm::translate(cubeTextureModel,
 				glm::vec3(-5.0, 0.5, 3.0));
 		glBindTexture(GL_TEXTURE_2D, textureID4);
-		shaderTexture.setVectorFloat2("scaleUV",
+		shaderMulLighting.setVectorFloat2("scaleUV",
 				glm::value_ptr(glm::vec2(2.0, 1.0)));
 		box3.render(cubeTextureModel);
+		shaderMulLighting.setVectorFloat2("scaleUV",
+				glm::value_ptr(glm::vec2(0.0, 0.0)));
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		// Render del cyindro con materiales
@@ -808,6 +814,25 @@ void applicationLoop() {
 		modelRailRoad.render(matrixModelRailroad);
 		// Forze to enable the unit texture to 0 always ----------------- IMPORTANT
 		glActiveTexture(GL_TEXTURE0);
+
+		glBindTexture(GL_TEXTURE_2D, textureID4);
+		boxWall.setScale(glm::vec3(10.0, 5.0, 0.05));
+		boxWall.setPosition(glm::vec3(-10.0, 2.5, 0.0));
+		boxWall.setOrientation(glm::vec3(0.0, 0.0, 0.0));
+		boxWall.render();
+		boxWall.setScale(glm::vec3(10.0, 5.0, 0.05));
+		boxWall.setPosition(glm::vec3(-15.0, 2.5, -5.0));
+		boxWall.setOrientation(glm::vec3(0.0, 90.0, 0.0));
+		boxWall.render();
+		boxWall.setScale(glm::vec3(10.0, 5.0, 0.05));
+		boxWall.setPosition(glm::vec3(-5.0, 2.5, -5.0));
+		boxWall.setOrientation(glm::vec3(0.0, 90.0, 0.0));
+		boxWall.render();
+		boxWall.setScale(glm::vec3(10.0, 5.0, 0.05));
+		boxWall.setPosition(glm::vec3(-10.0, 2.5, -10.0));
+		boxWall.setOrientation(glm::vec3(0.0, 0.0, 0.0));
+		boxWall.render();
+		glBindTexture(GL_TEXTURE_2D, 0);
 
 		glm::mat4 matrixModelAircraft = glm::mat4(1.0);
 		matrixModelAircraft = glm::translate(matrixModelAircraft, glm::vec3(8.0, 2.0, -10.0));
