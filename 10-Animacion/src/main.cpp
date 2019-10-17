@@ -876,8 +876,8 @@ void applicationLoop() {
 		boxWall.setPosition(glm::vec3(-10.0, 2.5, -10.0));
 		boxWall.setOrientation(glm::vec3(0.0, 0.0, 0.0));
 		boxWall.render();
-		boxWall.setScale(glm::vec3(12.0, 24.0, 0.05));
-		boxWall.setPosition(glm::vec3(-10.0, 5, -10.0));
+		boxWall.setScale(glm::vec3(12.0, 12.0, 0.05));
+		boxWall.setPosition(glm::vec3(-10.0, 5, -5.0));
 		boxWall.setOrientation(glm::vec3(90.0, 0.0, 0.0));
 		boxWall.render();
 		glBindTexture(GL_TEXTURE_2D, 0);
