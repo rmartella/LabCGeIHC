@@ -1000,7 +1000,6 @@ void applicationLoop() {
 			}
 			break;
 		}
-
 		glfwSwapBuffers(window);
 	}
 }
