@@ -132,15 +132,21 @@ bool saveFrame = false, availableSave = true;
 std::ofstream myfile;
 std::string fileName = "";
 bool record = false;
-std::vector<std::vector<glm::mat4>> keyFramesModel;
 
 // Joints interpolations Dart Lego
 std::vector<std::vector<float>> keyFramesJoints;
+std::vector<std::vector<glm::mat4>> keyFramesDart;
 int indexFrameJoints = 0;
 int indexFrameJointsNext = 1;
 float interpolationJoints = 0.0;
 int maxNumPasosJoints = 20;
 int numPasosJoints = 0;
+
+int indexFrameDart = 0;
+int indexFrameDartNext = 1;
+float interpolationDart = 0.0;
+int maxNumPasosDart = 200;
+int numPasosDart = 0;
 
 double deltaTime;
 double currTime, lastTime;
@@ -599,6 +605,8 @@ bool processInput(bool continueApplication) {
 			modelSelected = 0;
 		if(modelSelected == 1)
 			fileName = "../animaciones/animation_rotation.txt";
+		if (modelSelected == 2)
+			fileName = "../animaciones/animation_dart.txt";
 		std::cout << "modelSelected:" << modelSelected << std::endl;
 	}
 	else if(glfwGetKey(window, GLFW_KEY_TAB) == GLFW_RELEASE)
@@ -618,6 +626,8 @@ bool processInput(bool continueApplication) {
 		myfile.close();
 		if(modelSelected == 1)
 			keyFramesJoints = getKeyRotFrames(fileName);
+		if (modelSelected == 2)
+			keyFramesDart = getKeyFrames(fileName);
 	}
 	if(availableSave && glfwGetKey(window, GLFW_KEY_ENTER) == GLFW_PRESS){
 		saveFrame = true;
@@ -751,9 +761,9 @@ void applicationLoop() {
 	modelMatrixDart = glm::scale(modelMatrixDart, glm::vec3(0.5, 0.5, 0.5));
 
 	// Variables to interpolation key frames
-
-	fileName = "../animaciones/animation_rotation.txt";
+	fileName = "../animaciones/animation_dart_joints.txt";
 	keyFramesJoints = getKeyRotFrames(fileName);
+	keyFramesDart = getKeyFrames("../animaciones/animation_dart.txt");
 
 	lastTime = TimeManager::Instance().GetTime();
 
@@ -769,8 +779,8 @@ void applicationLoop() {
 		psi = processInput(true);
 
 		// Variables donde se guardan las matrices de cada articulacion por 1 frame
-		std::vector<glm::mat4> matrixModel;
 		std::vector<float> matrixJoints;
+		std::vector<glm::mat4> matrixDart;
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		glm::mat4 projection = glm::perspective(glm::radians(45.0f),
@@ -1172,8 +1182,6 @@ void applicationLoop() {
 		// Dart lego
 		// Se deshabilita el cull faces IMPORTANTE para la capa
 		glDisable(GL_CULL_FACE);
-		modelMatrixDart = glm::translate(modelMatrixDart, glm::vec3(advanceDartBody, 0.0, 0.0));
-		modelMatrixDart = glm::rotate(modelMatrixDart, rotDartBody, glm::vec3(0, 1, 0));
 		modelDartLegoBody.render(modelMatrixDart);
 		glm::mat4 modelMatrixDartHead = glm::mat4(modelMatrixDart);
 		modelMatrixDartHead = glm::rotate(modelMatrixDartHead, rotDartHead, glm::vec3(0, 1, 0));
@@ -1255,6 +1263,31 @@ void applicationLoop() {
 			rotDartRightHand = interpolate(keyFramesJoints, indexFrameJoints, indexFrameJointsNext, 4, interpolationJoints);
 			rotDartLeftLeg = interpolate(keyFramesJoints, indexFrameJoints, indexFrameJointsNext, 5, interpolationJoints);
 			rotDartRightLeg = interpolate(keyFramesJoints, indexFrameJoints, indexFrameJointsNext, 6, interpolationJoints);
+		}
+
+		if (record && modelSelected == 2) {
+			modelMatrixDart = glm::translate(modelMatrixDart, glm::vec3(advanceDartBody, 0.0, 0.0));
+			modelMatrixDart = glm::rotate(modelMatrixDart, rotDartBody, glm::vec3(0, 1, 0));
+			matrixDart.push_back(modelMatrixDart);
+			if (saveFrame) {
+				appendFrame(myfile, matrixDart);
+				saveFrame = false;
+			}
+		}
+		else if (keyFramesDart.size() > 0) {
+			// Para reproducir el frame
+			interpolationDart = numPasosDart / (float)maxNumPasosDart;
+			numPasosDart++;
+			if (interpolationDart > 1.0) {
+				numPasosDart = 0;
+				interpolationDart = 0;
+				indexFrameDart = indexFrameDartNext;
+				indexFrameDartNext++;
+			}
+			if (indexFrameDartNext > keyFramesDart.size() - 1)
+				indexFrameDartNext = 0;
+
+			modelMatrixDart = interpolate(keyFramesDart, indexFrameDart, indexFrameDartNext, 0, interpolationDart);
 		}
 
 		/*******************************************
